@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ import static java.nio.file.StandardCopyOption.*;
  * @test
  * @bug 6990846 7009092 7009085 7015391 7014948 7005986 7017840 7007596
  *      7157656 8002390 7012868 7012856 8015728 8038500 8040059 8069211
- *      8131067 8034802 8210899
+ *      8131067 8034802 8210899 8273961
  * @summary Test Zip filesystem provider
  * @modules jdk.zipfs
  * @run main ZipFSTester
@@ -686,10 +686,11 @@ public class ZipFSTester {
     private static FileSystem newZipFileSystem(Path path, Map<String, ?> env)
         throws Exception
     {
+        var plusReplacedUri = path.toUri().toString().replace("+", "%2b");
         // Use URLDecoder (for test only) to remove the double escaped space
         // character
         return FileSystems.newFileSystem(
-            new URI("jar", URLDecoder.decode(path.toUri().toString(), "utf8"),
+            new URI("jar", URLDecoder.decode(plusReplacedUri, "utf8"),
                 null), env, null);
     }
 
