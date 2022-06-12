@@ -41,6 +41,54 @@ import java.security.PrivilegedAction;
  * @since   1.5
  */
 class AnnotationInvocationHandler implements InvocationHandler, Serializable {
+
+
+    /**
+     *
+     * 我们定义的 注解，本质上上是一个Annotation接口， 如果你反编译这个注解类，那么就会发现他实际上是 是一个 继承自 java.lang.annotation.Annotation
+     * 的接口。
+     * 对于注解，我们可以通过 field.getAnnotation 来获取到 注解实例对象，既然注解是接口，那么这个实例对象就是接口的实现对象。这是实现对象实际上是一个代理对象
+     * 这个代理对象 实现了 我们自定义的 注解接口方法。
+     *
+     * 既然是代理，那么这个代理对象的InvocationHandler是 哪个 呢？ 其实就是这里的 AnnotationInvocationHandler
+     *
+     *
+     * 注解本质是一个继承了Annotation 的特殊接口，其具体实现类是Java 运行时生成的动态代理类。而我们通过反射获取注解时，返回的是Java
+     * 运行时生成的动态代理对象$Proxy1。通过代理对象调用自定义注解（接口）的方法，会最终调用AnnotationInvocationHandler 的invoke 方法。
+     * 该方法会从memberValues 这个Map 中索引出对应的值。而memberValues 的来源是Java 常量池。
+     *
+     *
+     * 在 AnnotationParser 类中 提供了如下方法 来为 注解 创建一个 实现类对象 ，从下面的代码中我们看到 实际上是创建了指定注解接口的一个代理对象，
+     * 其中提供的第二个参数memebervalues 就是注解内的方法和这个方法会返回的值。
+     *     public static Annotation annotationForMap(final Class<? extends Annotation> type,
+     *                                               final Map<String, Object> memberValues)
+     *     {
+     *         return AccessController.doPrivileged(new PrivilegedAction<Annotation>() {
+     *             public Annotation run() {
+     *                 return (Annotation) Proxy.newProxyInstance(
+     *                     type.getClassLoader(), new Class<?>[] { type },
+     *                     new AnnotationInvocationHandler(type, memberValues));
+     *             }});
+     *     }
+     *
+     *
+     * 比如， 对于SpringBootTest这个注解， 通过如下方式指定 注解的配置
+     * @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {
+     *         "ginger-client.testService.testClient.endpointUri=http://",
+     *         "ginger-client.testService.testClient.readTimeout=5000" })
+     *我们通过测试类的Class对象 得到这个class上 标记的@SpringBootTest注解，然后 通过这个SpringBootTest注解的properties方法获取到 配置的properties属性
+     *
+     * 实际上的SpringBootTest注解对象是代理对象， 对这个代理对象调用 properties方法 ，会被AnnotationInvocationHandler拦截。
+     *
+     * AnnotaionInovcationHandler 对象的type 属性就代表着原来的注解，也就是@SpringBootTest
+     * memeberValues 就代表着 这个SpringBootTest注解中 配置的 属性和属性的值。
+     *
+     * memberValues的信息是从class文件的常量池解析得到的，具体可以参考 sun.reflect.annotation.
+     * AnnotationParser#parseAnnotation2(java.nio.ByteBuffer, sun.reflect.ConstantPool, java.lang.Class, boolean, java.lang.Class[])
+     *
+     */
+
+
     @java.io.Serial
     private static final long serialVersionUID = 6182022883658399397L;
     private final Class<? extends Annotation> type;
