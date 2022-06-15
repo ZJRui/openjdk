@@ -46,6 +46,15 @@ import java.security.ProtectionDomain;
  * machine.
  *
  * <P>
+ *     问题：class file的 redefine 和retransformer有什么区别？
+ *     因为mainfest文件中可以 定义 Can-Retransform-Classes Can-Redefine-Classes
+ *
+ *     https://stackoverflow.com/questions/19009583/difference-between-redefine-and-retransform-in-javaagent
+ *
+ *
+ * </P>
+ *
+ * <P>
  * There are two kinds of transformers, determined by the <code>canRetransform</code>
  * parameter of
  * {@link java.lang.instrument.Instrumentation#addTransformer(ClassFileTransformer,boolean)}:

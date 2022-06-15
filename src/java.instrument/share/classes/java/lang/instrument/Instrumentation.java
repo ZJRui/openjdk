@@ -69,6 +69,17 @@ import java.util.jar.JarFile;
  * @apiNote This interface is not intended to be implemented outside of
  * the java.instrument module.
  *
+ *
+ * 这个类提供了调试Java编程语言代码所需的服务。插装是将字节码添加到方法中，以便收集工具使用的数据。由于更改纯粹是附加的，这些工具不会修改应用程序状态或行为。此类良性工具的示例包括监视代理、分析器、覆盖率分析器和事件日志记录器。
+ * 有两种方法可以获得Instrumentation接口的实例:
+ * 当JVM以指示代理类的方式启动时。在这种情况下，Instrumentation实例被传递给代理类的premain方法。
+ * 当JVM提供一种机制在JVM启动后启动代理时。在这种情况下，Instrumentation实例被传递给代理代码的agentmain方法。
+ * 这些机制在包规范中有描述。
+ * 一旦代理获得了Instrumentation实例，代理就可以在任何时候调用实例上的方法。
+ * API注意:
+ *
+ *
+ *
  * @since   1.5
  */
 public interface Instrumentation {
@@ -90,16 +101,25 @@ public interface Instrumentation {
      * This method is intended for use in instrumentation, as described in the
      * {@linkplain Instrumentation class specification}.
      *
+     *
+     *
+     *
+     * 注册提供的变压器。所有未来的类定义都将被转换器看到，除了任何已注册的转换器所依赖的类定义。
+     * 转换器在装入类和重定义类时被调用。如果canRetransform为真，当它们被重新转换时。
+     * ClassFileTransformer定义转换调用的顺序。如果一个转换器在执行期间抛出异常，
+     * JVM仍然会按顺序调用其他已注册的转换器。可以多次添加相同的变压器，
+     * 但是强烈建议这样做——通过创建变压器类的新实例来避免这种情况。
+     * 如类规范中所述，此方法用于插装。
+
      * @param transformer          the transformer to register
-     * @param canRetransform       can this transformer's transformations be retransformed
+     * @param canRetransform       can this transformer's transformations be retransformed 这个转换器的转换能被重新转换吗
      * @throws java.lang.NullPointerException if passed a <code>null</code> transformer
      * @throws java.lang.UnsupportedOperationException if <code>canRetransform</code>
      * is true and the current configuration of the JVM does not allow
      * retransformation ({@link #isRetransformClassesSupported} is false)
      * @since 1.6
      */
-    void
-    addTransformer(ClassFileTransformer transformer, boolean canRetransform);
+    void addTransformer(ClassFileTransformer transformer, boolean canRetransform);
 
     /**
      * Registers the supplied transformer.
@@ -162,8 +182,18 @@ public interface Instrumentation {
      * This function reruns the transformation process
      * (whether or not a transformation has previously occurred).
      * This retransformation follows these steps:
+     *
+     * <p>
+     * 重新转换提供的类集。
+     * 这个函数有助于插装已经加载的类。当类最初加载或重新定义时，
+     * 可以使用ClassFileTransformer转换初始的类文件字节。
+     * 该函数重新运行转换过程(无论以前是否发生了转换)。这个重新转换遵循以下步骤:
+     *
+     * </p>
+     *
      *  <ul>
      *    <li>starting from the initial class file bytes
+     *    从初始类文件字节开始
      *    </li>
      *    <li>for each transformer that was added with <code>canRetransform</code>
      *      false, the bytes returned by
@@ -172,14 +202,21 @@ public interface Instrumentation {
      *      reused as the output of the transformation; note that this is
      *      equivalent to reapplying the previous transformation, unaltered;
      *      except that {@code transform} method is not called.
+     *
+     *      对于每个添加了canRetransform false的转换器，在最后一次加载或重新定义类期
+     *      间transform返回的字节将被重用为转换的输出;请注意，这相当于重新应用之前的转换，
+     *      不加更改;除了transform方法没有被调用。
+     *
      *    </li>
      *    <li>for each transformer that was added with <code>canRetransform</code>
      *      true, the
      *      {@link ClassFileTransformer#transform(Module,ClassLoader,String,Class,ProtectionDomain,byte[])
      *      transform} method is called in these transformers
+     *      对于每个添加了canRetransform为true的转换器，在这些转换器中调用transform方法
      *    </li>
      *    <li>the transformed class file bytes are installed as the new
      *      definition of the class
+     *      转换后的类文件字节作为类的新定义安装
      *    </li>
      *  </ul>
      * <P>
